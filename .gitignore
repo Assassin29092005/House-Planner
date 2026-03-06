@@ -58,3 +58,7 @@ database-debug.log
 # Misc
 *.tgz
 .cache
+
+upgrades.txt
+
+CLAUDE.md
