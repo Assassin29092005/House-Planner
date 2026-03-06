@@ -157,6 +157,10 @@ const SiteConfigModal = () => {
               const pxPerUnit = unitConfig.pxPerUnit;
               const w = (tmpl.siteWidth / pxPerUnit).toFixed(0);
               const d = (tmpl.siteDepth / pxPerUnit).toFixed(0);
+              const floors = tmpl.floors || [{ walls: tmpl.walls, furniture: tmpl.furniture }];
+              const wallCount = floors.reduce((s, f) => s + (f.walls || []).length, 0);
+              const furnCount = floors.reduce((s, f) => s + (f.furniture || []).length, 0);
+              const floorLabel = floors.length > 1 ? ` • ${floors.length} floors` : '';
               return (
                 <button key={key} onClick={() => handleTemplate(key)}
                   className="w-full bg-[#0f172a] border border-[#334155] rounded-xl p-4 text-left hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
@@ -164,7 +168,7 @@ const SiteConfigModal = () => {
                     <span className="text-3xl">{tmpl.icon}</span>
                     <div>
                       <div className="text-sm font-black text-slate-200 group-hover:text-white">{tmpl.name}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{w} × {d} {unitConfig.suffix} • {tmpl.walls.length} walls • {tmpl.furniture?.length || 0} items</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{w} × {d} {unitConfig.suffix} • {wallCount} walls • {furnCount} items{floorLabel}</div>
                     </div>
                   </div>
                 </button>
