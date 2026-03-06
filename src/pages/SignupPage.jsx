@@ -20,7 +20,7 @@ const SignupPage = () => {
 
         setLoading(true);
         try {
-            const { data, error: err } = await signUp(email, password, fullName);
+            const { error: err } = await signUp(email, password, fullName);
             setLoading(false);
 
             if (err) { setError(err.message); return; }

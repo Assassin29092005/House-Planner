@@ -19,10 +19,10 @@ const TwoDEditor = ({ viewMode }) => {
     levels, currentLevelId, setCurrentLevel, addLevel, deleteLevel,
     isStructureStable, gridSnap, toggleGridSnap, snapToGrid,
     convertUnit, convertArea, measurementUnit, addOpening, updateOpening, flipWallSides,
-    selectedIds, toggleMultiSelect, clearMultiSelect, groupMove, groupDelete,
+    selectedIds, toggleMultiSelect, clearMultiSelect, groupDelete,
     backgroundImage, setBackgroundImage,
     versionHistory, saveVersion, restoreVersion, deleteVersion,
-    roomTextures, setRoomTexture,
+    roomTextures,
   } = store;
 
   const stageRef = useRef(null);
@@ -42,15 +42,13 @@ const TwoDEditor = ({ viewMode }) => {
   const [selectedObjectType, setSelectedObjectType] = useState(null);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, targetId: null, type: null });
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showProperties, setShowProperties] = useState(true);
+  const [showProperties] = useState(true);
   const [editingLabel, setEditingLabel] = useState(null);
   const [containerW, setContainerW] = useState(800);
   const [containerH, setContainerH] = useState(600);
-  const hasAutoFit = useRef(false);
   const [alignmentGuides, setAlignmentGuides] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
   const [bgImage, setBgImage] = useState(null);
-  const [multiDragStart, setMultiDragStart] = useState(null);
 
   // Computed
   const visibleWalls = useMemo(() => walls.filter(w => w.levelId === currentLevelId), [walls, currentLevelId]);
@@ -60,13 +58,14 @@ const TwoDEditor = ({ viewMode }) => {
 
   // Load background image
   useEffect(() => {
-    if (backgroundImage) {
-      const img = new window.Image();
-      img.src = backgroundImage;
-      img.onload = () => setBgImage(img);
-    } else {
-      setBgImage(null);
+    if (!backgroundImage) {
+      // Use microtask to avoid synchronous setState in effect
+      queueMicrotask(() => setBgImage(null));
+      return;
     }
+    const img = new window.Image();
+    img.src = backgroundImage;
+    img.onload = () => setBgImage(img);
   }, [backgroundImage]);
 
   // RESIZE observer
@@ -84,17 +83,20 @@ const TwoDEditor = ({ viewMode }) => {
     return () => ro.disconnect();
   }, []);
 
-  // AUTO-CENTERING (only runs once when siteWidth/siteDepth first become valid, or viewMode changes)
+  // AUTO-CENTERING (runs when site dimensions or viewMode changes)
   useEffect(() => {
     if (siteWidth > 0 && siteDepth > 0 && containerW > 0 && containerH > 0) {
       const padding = 80;
       const scaleX = (containerW - padding * 2) / siteWidth;
       const scaleY = (containerH - padding * 2) / siteDepth;
       const initialScale = Math.min(scaleX, scaleY, 1.5);
-      setStageScale(initialScale);
-      setStagePos({ x: (containerW - siteWidth * initialScale) / 2, y: (containerH - siteDepth * initialScale) / 2 });
+      // Use microtask to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        setStageScale(initialScale);
+        setStagePos({ x: (containerW - siteWidth * initialScale) / 2, y: (containerH - siteDepth * initialScale) / 2 });
+      });
     }
-  }, [siteWidth, siteDepth, viewMode]);
+  }, [siteWidth, siteDepth, viewMode, containerW, containerH]);
 
   // SAVE / LOAD / EXPORT
   const handleSave = useCallback(() => {

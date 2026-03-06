@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import EditorPage from './pages/EditorPage';
-import { auth, onAuthChange } from './firebase';
+import { onAuthChange } from './firebase';
 
 function App() {
   const [user, setUser] = useState(undefined);

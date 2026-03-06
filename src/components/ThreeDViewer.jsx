@@ -1,9 +1,9 @@
-import React, { useMemo, useState, Suspense, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, Suspense, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { CameraControls, Environment, useTexture, Html, Grid, PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
 import useStore from '../store';
-import { createFloorShape, createRoofShape, checkStability, getWallLength, createRoomFloorShape } from '../utils/geometry';
+import { createFloorShape, createRoofShape, checkStability, createRoomFloorShape } from '../utils/geometry';
 import { findRooms } from '../utils/roomDetection';
 import { CONFIG } from '../constants';
 
@@ -36,11 +36,11 @@ const FirstPersonMovement = () => {
   useEffect(() => {
     const handleDown = (e) => {
       const k = e.key.toLowerCase();
-      if (keys.current.hasOwnProperty(k)) keys.current[k] = true;
+      if (Object.hasOwn(keys.current, k)) keys.current[k] = true;
     };
     const handleUp = (e) => {
       const k = e.key.toLowerCase();
-      if (keys.current.hasOwnProperty(k)) keys.current[k] = false;
+      if (Object.hasOwn(keys.current, k)) keys.current[k] = false;
     };
     window.addEventListener('keydown', handleDown);
     window.addEventListener('keyup', handleUp);
@@ -94,6 +94,7 @@ const FirstPersonMovement = () => {
     }
 
     const targetY = floorElevation.current + EYE_HEIGHT;
+    // eslint-disable-next-line react-hooks/immutability
     camera.position.y += (targetY - camera.position.y) * 0.2;
   });
 
@@ -218,10 +219,10 @@ const Wall3D = ({ wall, yOffset, textures }) => {
   const midX = (wall.start.x + wall.end.x) / 2, midZ = (wall.start.y + wall.end.y) / 2;
   const texA = wall.textureA && wall.textureA !== 'none' ? textures[wall.textureA] : null;
   const texB = wall.textureB && wall.textureB !== 'none' ? textures[wall.textureB] : null;
-  if (len < 1) return null;
 
   // Compute wall segments when openings exist
   const segments = useMemo(() => {
+    if (len < 1) return null;
     const ops = wall.openings || [];
     if (ops.length === 0) return null;
     const sorted = [...ops].sort((a, b) => a.dist - b.dist);
@@ -255,6 +256,8 @@ const Wall3D = ({ wall, yOffset, textures }) => {
     }
     return segs;
   }, [wall.openings, len, wall.height]);
+
+  if (len < 1) return null;
 
   // No openings — single box (original behavior)
   if (!segments) {
@@ -427,7 +430,6 @@ const ThreeDViewer = () => {
   const [showRoof, setShowRoof] = useState(false);
   const [visibleLevels, setVisibleLevels] = useState(null);
   const [showMaterialPanel, setShowMaterialPanel] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null);
   const centerX = siteWidth / 2, centerZ = siteDepth / 2;
 
   const levelsToRender = visibleLevels

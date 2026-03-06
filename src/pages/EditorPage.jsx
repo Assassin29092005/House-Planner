@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import TwoDEditor from '../components/TwoDEditor';
-import ThreeDViewer from '../components/ThreeDViewer';
 import AssetLibrary from '../components/AssetLibrary';
 import SiteConfigModal from '../components/SiteConfigModal';
 import CostEstimator from '../components/CostEstimator';
 import CloudPanel from '../components/CloudPanel';
 import OnboardingTour from '../components/OnboardingTour';
+
+const ThreeDViewer = lazy(() => import('../components/ThreeDViewer'));
 import useStore from '../store';
 import { getUser, signOut, loadProject as loadCloudProject, saveProject as saveCloudProject } from '../firebase';
 import { toast } from '../components/Toast';
@@ -91,7 +92,7 @@ const EditorPage = () => {
             const stageEl = document.querySelector('canvas');
             let thumbnail = null;
             if (stageEl) {
-                try { thumbnail = stageEl.toDataURL('image/png', 0.3); } catch (e) { }
+                try { thumbnail = stageEl.toDataURL('image/png', 0.3); } catch { /* ignore */ }
             }
             const data = { ...getExportData(), name: projectName, thumbnail };
             const { data: saved, error } = await saveCloudProject(data, currentProjectId);
@@ -216,7 +217,9 @@ const EditorPage = () => {
                         )}
                         {(viewMode === '3d' || viewMode === 'split') && (
                             <div className={`${viewMode === 'split' ? 'w-[40%]' : 'w-full'} h-full relative`}>
-                                <ThreeDViewer />
+                                <Suspense fallback={<div className="flex items-center justify-center h-full bg-slate-900 text-blue-400">Loading 3D viewer...</div>}>
+                                    <ThreeDViewer />
+                                </Suspense>
                                 {viewMode === '3d' && showCost && <CostEstimator onClose={() => setShowCost(false)} />}
                                 {viewMode === '3d' && showCloud && <CloudPanel onClose={() => setShowCloud(false)} />}
                             </div>
