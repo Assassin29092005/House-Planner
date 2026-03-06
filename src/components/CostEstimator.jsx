@@ -4,7 +4,7 @@ import { getWallLength } from '../utils/geometry';
 import { findRooms } from '../utils/roomDetection';
 
 const CostEstimator = ({ onClose }) => {
-    const { walls, currentLevelId, convertUnit, measurementUnit, furniture, siteWidth, siteDepth } = useStore();
+    const { walls, currentLevelId, measurementUnit, furniture, siteWidth, siteDepth } = useStore();
     const [wallRate, setWallRate] = useState(50);
     const [floorRate, setFloorRate] = useState(30);
     const [furnitureRate, setFurnitureRate] = useState(200);

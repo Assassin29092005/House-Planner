@@ -3,8 +3,6 @@
 
 const EPSILON = 2; // tolerance for matching endpoints
 
-const pointsEqual = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < EPSILON;
-
 // Build graph of wall connections
 const buildGraph = (walls) => {
     const nodes = new Map(); // key: "x,y" -> { x, y, edges: [{to, wallId}] }

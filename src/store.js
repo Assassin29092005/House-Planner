@@ -336,7 +336,7 @@ const createHistorySlice = (set, get) => ({
   },
 
   saveVersion: (name) => {
-    const { past, future, versionHistory, ...data } = get();
+    const { past: _past, future: _future, versionHistory, ...data } = get();
     const version = { name: name || `Version ${(versionHistory.length) + 1}`, timestamp: new Date().toISOString(), data: JSON.parse(JSON.stringify(data)) };
     set({ versionHistory: [...get().versionHistory, version] });
   },

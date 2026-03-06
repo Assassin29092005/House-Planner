@@ -14,7 +14,7 @@ const LoginPage = () => {
         setError('');
         setLoading(true);
         try {
-            const { data, error: err } = await signIn(email, password);
+            const { error: err } = await signIn(email, password);
             setLoading(false);
             if (err) { setError(err.message); return; }
             navigate('/dashboard');
