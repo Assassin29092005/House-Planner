@@ -16,6 +16,8 @@ const CATEGORIES = [
       { type: 'table', icon: '🪑', label: 'Table' },
       { type: 'desk', icon: '🖥️', label: 'Desk' },
       { type: 'chair', icon: '💺', label: 'Chair' },
+      { type: 'toilet', icon: '🚽', label: 'Toilet' },
+      { type: 'cupboard', icon: '🗄️', label: 'Cupboard' },
     ]
   },
   {

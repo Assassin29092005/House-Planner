@@ -198,6 +198,11 @@ const createWallSlice = (set, get) => ({
     set(s => ({ walls: s.walls.map(w => w.id !== wid ? w : { ...w, openings: w.openings.filter(o => o.id !== oid) }) }));
   },
 
+  updateOpening: (wid, oid, updates) => {
+    get().saveHistory();
+    set(s => ({ walls: s.walls.map(w => w.id !== wid ? w : { ...w, openings: w.openings.map(o => o.id === oid ? { ...o, ...updates } : o) }) }));
+  },
+
   splitWallAtPoint: (wid, p) => {
     const w = get().walls.find(x => x.id === wid);
     if (!w) return;
@@ -247,7 +252,7 @@ const createObjectsSlice = (set, get) => ({
   addFurniture: (type, x, y) => {
     get().saveHistory();
     const id = uuidv4();
-    const sizes = { bed: { width: 40, height: 60 }, sofa: { width: 60, height: 25 }, table: { width: 30, height: 30 }, chair: { width: 20, height: 20 }, desk: { width: 50, height: 30 } };
+    const sizes = { bed: { width: 40, height: 60 }, sofa: { width: 60, height: 25 }, table: { width: 30, height: 30 }, chair: { width: 20, height: 20 }, desk: { width: 50, height: 30 }, toilet: { width: 20, height: 25 }, cupboard: { width: 50, height: 20 } };
     const size = sizes[type] || { width: 25, height: 25 };
     set(s => ({ furniture: [...s.furniture, { id, type, x, y, rotation: 0, width: size.width, height: size.height, levelId: s.currentLevelId }] }));
     return id;
@@ -366,30 +371,48 @@ const createHistorySlice = (set, get) => ({
   },
 
   loadTemplate: (template) => {
-    const wallData = template.walls.map(w => ({
+    const szMap = { bed: [40, 60], sofa: [60, 25], desk: [50, 30], toilet: [20, 25], cupboard: [50, 20] };
+    const parseWall = (w, levelId) => ({
       id: uuidv4(), start: w.start, end: w.end, thickness: CONFIG.WALL_THICKNESS, height: CONFIG.WALL_HEIGHT,
-      levelId: 0, colorSideA: CONFIG.COLOR_WALL_DEFAULT, colorSideB: CONFIG.COLOR_WALL_DEFAULT,
-      textureA: 'none', textureB: 'none',
+      levelId, colorSideA: w.colorSideA || CONFIG.COLOR_WALL_DEFAULT, colorSideB: w.colorSideB || CONFIG.COLOR_WALL_DEFAULT,
+      textureA: w.textureA || 'none', textureB: w.textureB || 'none',
       openings: (w.openings || []).map(o => ({
         id: uuidv4(), type: o.type, dist: o.dist,
         width: o.width || (o.type === 'door' ? 30 : 40),
         height: o.height || (o.type === 'door' ? 80 : 40),
         sillHeight: o.sillHeight !== undefined ? o.sillHeight : (o.type === 'door' ? 0 : 30),
       }))
-    }));
-    const furnData = (template.furniture || []).map(f => {
-      const dw = f.type === 'bed' ? 40 : f.type === 'sofa' ? 60 : f.type === 'desk' ? 50 : 30;
-      const dh = f.type === 'bed' ? 60 : f.type === 'sofa' ? 25 : 30;
-      return { id: uuidv4(), type: f.type, x: f.x, y: f.y, rotation: f.rotation || 0, levelId: 0, width: f.width || dw, height: f.height || dh };
     });
-    const labels = (template.roomLabels || []).map(l => ({ id: uuidv4(), ...l, size: '0', levelId: 0 }));
+    const parseFurn = (f, levelId) => {
+      const sz = szMap[f.type] || [30, 30];
+      return { id: uuidv4(), type: f.type, x: f.x, y: f.y, rotation: f.rotation || 0, levelId, width: f.width || sz[0], height: f.height || sz[1] };
+    };
+    const parseLabel = (l, levelId) => ({ id: uuidv4(), x: l.x, y: l.y, name: l.name, size: '0', levelId });
+
+    // Support multi-floor templates via `floors` array, or single-floor via top-level walls/furniture
+    const floors = template.floors || [{ walls: template.walls, furniture: template.furniture, roomLabels: template.roomLabels }];
+    const floorNames = ['Ground Floor', '1st Floor', '2nd Floor', '3rd Floor'];
+    const levelDefs = floors.map((_, i) => ({ id: i, name: floorNames[i] || `${i}th Floor`, elevation: i * CONFIG.DEFAULT_LEVEL_HEIGHT, height: CONFIG.DEFAULT_LEVEL_HEIGHT }));
+
+    let allWalls = [], allFurn = [], allLabels = [];
+    floors.forEach((floor, levelId) => {
+      allWalls = allWalls.concat((floor.walls || []).map(w => parseWall(w, levelId)));
+      allFurn = allFurn.concat((floor.furniture || []).map(f => parseFurn(f, levelId)));
+      allLabels = allLabels.concat((floor.roomLabels || []).map(l => parseLabel(l, levelId)));
+    });
+
+    const stairData = (template.stairs || []).map(s => ({
+      id: uuidv4(), x: s.x, y: s.y, width: s.width || 30, length: s.length || 80, rotation: s.rotation || 0, levelId: s.levelId || 0
+    }));
+
     set({
       siteWidth: template.siteWidth, siteDepth: template.siteDepth,
-      walls: wallData, furniture: furnData, roomLabels: labels,
-      stairs: [], levels: [{ id: 0, name: 'Ground Floor', elevation: 0, height: CONFIG.DEFAULT_LEVEL_HEIGHT }],
-      currentLevelId: 0, past: [], future: [], selectedWallId: null, selectedIds: [], pillars: []
+      walls: allWalls, furniture: allFurn, roomLabels: allLabels,
+      stairs: stairData, levels: levelDefs,
+      currentLevelId: 0, past: [], future: [], selectedWallId: null, selectedIds: [], pillars: [],
+      roomTextures: template.roomTextures || {},
     });
-    get().addCornerPillars(0);
+    levelDefs.forEach(l => get().addCornerPillars(l.id));
     get().updateStability();
   },
 

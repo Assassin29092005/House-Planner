@@ -206,7 +206,7 @@ const EditorPage = () => {
                         ))}
                     </div>
 
-                    <div className="flex h-full w-full">
+                    <div className="flex h-full w-full" key={viewMode}>
                         {(viewMode === '2d' || viewMode === 'split') && (
                             <div className={`${viewMode === 'split' ? 'w-[60%]' : 'w-full'} h-full border-r border-[#334155] flex flex-col relative`}>
                                 <TwoDEditor viewMode={viewMode} />

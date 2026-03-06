@@ -18,7 +18,7 @@ const TwoDEditor = ({ viewMode }) => {
     roomLabels, addRoomLabel, updateRoomLabel, deleteRoomLabel,
     levels, currentLevelId, setCurrentLevel, addLevel, deleteLevel,
     isStructureStable, gridSnap, toggleGridSnap, snapToGrid,
-    convertUnit, convertArea, measurementUnit, addOpening, flipWallSides,
+    convertUnit, convertArea, measurementUnit, addOpening, updateOpening, flipWallSides,
     selectedIds, toggleMultiSelect, clearMultiSelect, groupMove, groupDelete,
     backgroundImage, setBackgroundImage,
     versionHistory, saveVersion, restoreVersion, deleteVersion,
@@ -358,11 +358,13 @@ const TwoDEditor = ({ viewMode }) => {
       };
     }
     if (selectedObject && selectedObjectType === 'furniture') {
-      const icons = { bed: '🛏️', sofa: '🛋️', table: '🪑', desk: '🖥️', chair: '💺' };
+      const icons = { bed: '🛏️', sofa: '🛋️', table: '🪑', desk: '🖥️', chair: '💺', toilet: '🚽', cupboard: '🗄️' };
       return {
         title: selectedObject.type.charAt(0).toUpperCase() + selectedObject.type.slice(1), icon: icons[selectedObject.type] || '📦', props: [
           { label: 'Size', value: `${selectedObject.width}×${selectedObject.height}` }, { label: 'Position', value: `${Math.round(selectedObject.x)}, ${Math.round(selectedObject.y)}` },
+          { label: 'Rotation', value: `${selectedObject.rotation || 0}°` },
         ], actions: [
+          { label: 'Rotate 90°', action: () => updateFurniture(selectedObjectId, { rotation: ((selectedObject.rotation || 0) + 90) % 360 }) },
           { label: 'Duplicate', action: () => duplicateObject(selectedObjectId, 'furniture') },
           { label: 'Delete', action: () => { deleteFurniture(selectedObjectId); setSelectedObjectId(null); }, danger: true },
         ]
@@ -543,13 +545,29 @@ const TwoDEditor = ({ viewMode }) => {
                   {/* Openings */}
                   {wall.openings.map((opening, oidx) => {
                     if (len === 0) return null;
-                    const ratio = Math.min(Math.max(opening.dist, opening.width / 2), len - opening.width / 2) / len;
-                    const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
-                    const ox = wall.start.x + dx * ratio, oy = wall.start.y + dy * ratio;
+                    const clampedDist = Math.min(Math.max(opening.dist, opening.width / 2), len - opening.width / 2);
+                    const ratio = clampedDist / len;
+                    const wdx = wall.end.x - wall.start.x, wdy = wall.end.y - wall.start.y;
+                    const ox = wall.start.x + wdx * ratio, oy = wall.start.y + wdy * ratio;
                     const hw = (opening.width / 2 / len);
                     return (
-                      <Group key={opening.id || oidx}>
-                        <Line points={[wall.start.x + dx * (ratio - hw), wall.start.y + dy * (ratio - hw), wall.start.x + dx * (ratio + hw), wall.start.y + dy * (ratio + hw)]}
+                      <Group key={opening.id || oidx} draggable x={0} y={0}
+                        onDragMove={(e) => {
+                          const px = e.target.x() + ox, py = e.target.y() + oy;
+                          const t = Math.max(0, Math.min(1, ((px - wall.start.x) * wdx + (py - wall.start.y) * wdy) / (len * len)));
+                          const newDist = Math.max(opening.width / 2, Math.min(t * len, len - opening.width / 2));
+                          const snappedX = wall.start.x + wdx * (newDist / len);
+                          const snappedY = wall.start.y + wdy * (newDist / len);
+                          e.target.x(snappedX - ox); e.target.y(snappedY - oy);
+                        }}
+                        onDragEnd={(e) => {
+                          const px = e.target.x() + ox, py = e.target.y() + oy;
+                          const t = Math.max(0, Math.min(1, ((px - wall.start.x) * wdx + (py - wall.start.y) * wdy) / (len * len)));
+                          const newDist = Math.max(opening.width / 2, Math.min(t * len, len - opening.width / 2));
+                          updateOpening(wall.id, opening.id, { dist: newDist });
+                          e.target.x(0); e.target.y(0);
+                        }}>
+                        <Line points={[wall.start.x + wdx * (ratio - hw), wall.start.y + wdy * (ratio - hw), wall.start.x + wdx * (ratio + hw), wall.start.y + wdy * (ratio + hw)]}
                           stroke={opening.type === 'door' ? '#f59e0b' : '#38bdf8'} strokeWidth={wall.thickness + 4} lineCap="round" opacity={0.7} />
                         <Text x={ox - 8} y={oy - wall.thickness - 12} text={opening.type === 'door' ? '🚪' : '🪟'} fontSize={12} />
                       </Group>
@@ -588,12 +606,12 @@ const TwoDEditor = ({ viewMode }) => {
 
             {/* FURNITURE */}
             {furniture.filter(f => f.levelId === currentLevelId).map(f => {
-              const icons = { bed: '🛏️', sofa: '🛋️', table: '🪑', desk: '🖥️', chair: '💺' };
-              const colors = { bed: { fill: '#1e3a5f', stroke: '#3b82f6' }, sofa: { fill: '#3b1f2b', stroke: '#e11d48' }, table: { fill: '#1a2e1a', stroke: '#22c55e' }, desk: { fill: '#2d1b4e', stroke: '#8b5cf6' }, chair: { fill: '#2d2410', stroke: '#f59e0b' } };
+              const icons = { bed: '🛏️', sofa: '🛋️', table: '🪑', desk: '🖥️', chair: '💺', toilet: '🚽', cupboard: '🗄️' };
+              const colors = { bed: { fill: '#1e3a5f', stroke: '#3b82f6' }, sofa: { fill: '#3b1f2b', stroke: '#e11d48' }, table: { fill: '#1a2e1a', stroke: '#22c55e' }, desk: { fill: '#2d1b4e', stroke: '#8b5cf6' }, chair: { fill: '#2d2410', stroke: '#f59e0b' }, toilet: { fill: '#1e293b', stroke: '#e2e8f0' }, cupboard: { fill: '#2d1b0e', stroke: '#a16207' } };
               const c = colors[f.type] || { fill: '#1e293b', stroke: '#64748b' };
               const hasCollision = collisions.has(f.id);
               return (
-                <Group key={f.id} name="object" draggable x={f.x} y={f.y}
+                <Group key={f.id} name="object" draggable x={f.x} y={f.y} rotation={f.rotation || 0}
                   onClick={(e) => handleObjectClick(e, f.id, 'furniture')}
                   onDragEnd={(e) => updateFurniture(f.id, { x: e.target.x(), y: e.target.y() })}
                   onContextMenu={(e) => handleContextMenu(e, f.id, 'furniture')}>
@@ -719,6 +737,12 @@ const TwoDEditor = ({ viewMode }) => {
             <button className="text-[10px] font-bold p-2.5 text-left text-slate-300 hover:bg-[#334155] uppercase border-t border-[#334155] flex items-center gap-2 transition-colors"
               onClick={() => { duplicateObject(contextMenu.targetId, contextMenu.type); setContextMenu({ ...contextMenu, visible: false }); }}>
               <span>📋</span> Duplicate
+            </button>
+          )}
+          {contextMenu.type === 'furniture' && (
+            <button className="text-[10px] font-bold p-2.5 text-left text-slate-300 hover:bg-[#334155] uppercase border-t border-[#334155] flex items-center gap-2 transition-colors"
+              onClick={() => { const f = furniture.find(x => x.id === contextMenu.targetId); if (f) updateFurniture(contextMenu.targetId, { rotation: ((f.rotation || 0) + 90) % 360 }); setContextMenu({ ...contextMenu, visible: false }); }}>
+              <span>🔄</span> Rotate 90°
             </button>
           )}
           {contextMenu.type === 'wall' && (<>

@@ -379,6 +379,30 @@ const AutoRoof = ({ levelId, elevation }) => {
   );
 };
 
+const Toilet3D = ({ x, y, rotation, width, height: depth, elevation }) => (
+  <group position={[x, elevation, y]} rotation={[0, -(rotation || 0) * Math.PI / 180, 0]}>
+    {/* Base/bowl */}
+    <mesh position={[0, 8, 2]} castShadow><boxGeometry args={[width, 16, depth - 6]} /><meshStandardMaterial color="#e2e8f0" roughness={0.3} /></mesh>
+    {/* Tank */}
+    <mesh position={[0, 16, -depth / 2 + 3]} castShadow><boxGeometry args={[width - 2, 16, 6]} /><meshStandardMaterial color="#f1f5f9" roughness={0.3} /></mesh>
+    {/* Seat */}
+    <mesh position={[0, 17, 4]} castShadow><boxGeometry args={[width - 2, 1, depth - 10]} /><meshStandardMaterial color="#f8fafc" roughness={0.2} /></mesh>
+  </group>
+);
+
+const Cupboard3D = ({ x, y, rotation, width, height: depth, elevation }) => (
+  <group position={[x, elevation, y]} rotation={[0, -(rotation || 0) * Math.PI / 180, 0]}>
+    {/* Body */}
+    <mesh position={[0, 40, 0]} castShadow><boxGeometry args={[width, 80, depth]} /><meshStandardMaterial color="#78350f" roughness={0.7} /></mesh>
+    {/* Doors */}
+    <mesh position={[-width / 4, 40, depth / 2 + 0.5]} castShadow><boxGeometry args={[width / 2 - 1, 76, 1]} /><meshStandardMaterial color="#92400e" roughness={0.6} /></mesh>
+    <mesh position={[width / 4, 40, depth / 2 + 0.5]} castShadow><boxGeometry args={[width / 2 - 1, 76, 1]} /><meshStandardMaterial color="#92400e" roughness={0.6} /></mesh>
+    {/* Handles */}
+    <mesh position={[-2, 40, depth / 2 + 1.5]} castShadow><boxGeometry args={[1, 8, 1]} /><meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.2} /></mesh>
+    <mesh position={[2, 40, depth / 2 + 1.5]} castShadow><boxGeometry args={[1, 8, 1]} /><meshStandardMaterial color="#d4d4d8" metalness={0.8} roughness={0.2} /></mesh>
+  </group>
+);
+
 const FurnitureRenderer = ({ item, elevation }) => {
   const props = { ...item, elevation };
   switch (item.type) {
@@ -387,6 +411,8 @@ const FurnitureRenderer = ({ item, elevation }) => {
     case 'table': return <Table3D {...props} />;
     case 'chair': return <Chair3D {...props} />;
     case 'desk': return <Desk3D {...props} />;
+    case 'toilet': return <Toilet3D {...props} />;
+    case 'cupboard': return <Cupboard3D {...props} />;
     default: return <mesh position={[item.x, elevation + 10, item.y]} castShadow><boxGeometry args={[item.width, 20, item.height]} /><meshStandardMaterial color="#64748b" /></mesh>;
   }
 };
