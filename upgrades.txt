@@ -1,0 +1,313 @@
+================================================================================
+                        HOUSE PLANNER - UPGRADE LIST
+================================================================================
+  Generated: 2026-03-05
+  Total items: ~60 upgrades across 4 priority tiers
+================================================================================
+
+
+================================================================================
+  CRITICAL  -  Bugs, security issues, and showstoppers
+================================================================================
+
+1.  Firebase credentials exposed in source code
+    - .env file contains VITE_FIREBASE_* keys and is not in .gitignore
+    - Action: Add .env to .gitignore, rotate all Firebase keys immediately,
+      create .env.example with placeholder values
+
+2.  DashboardPage listProjects hangs forever with no error handling
+    - If the Firebase query fails, the dashboard shows a loading spinner
+      indefinitely with no timeout or error message
+    - Action: Add try/catch, error state, and retry button to project listing
+
+3.  EditorPage cloud project load has no error handling
+    - Loading a cloud project silently fails if the network request errors
+    - Action: Add try/catch around loadProject, show error toast, offer retry
+
+4.  No React Error Boundary
+    - Any unhandled JS error in any component crashes the entire app to a
+      blank white screen with no recovery path
+    - Action: Add ErrorBoundary component at app root and around major sections
+
+5.  CSS flexbox overflow bug in editor containers
+    - Editor panels can overflow their containers without min-h-0
+    - Status: Already fixed with min-h-0 on editor flex containers
+    - Action: Verify fix is applied everywhere, add regression test
+
+6.  CloudPanel save/delete errors silently swallowed
+    - Cloud save and delete operations catch errors but don't surface them
+      to the user in any way
+    - Action: Add error toasts/alerts when cloud operations fail
+
+7.  SiteConfigModal has no input validation
+    - Users can enter zero, negative, or absurdly large dimensions for the
+      site width/height with no validation
+    - Action: Add min/max validation, prevent form submission with invalid values
+
+8.  Undo/redo history stores bloated state objects
+    - Each history entry contains a full copy of the state tree including
+      potentially large arrays, leading to memory bloat over long sessions
+    - Action: Store only diffs/patches, or limit history depth with eviction
+
+9.  Race condition on rapid cloud save clicks
+    - Clicking save multiple times quickly fires duplicate requests,
+      potentially corrupting data or creating duplicate entries
+    - Action: Debounce save button, disable during in-flight requests,
+      or use a request queue
+
+10. No unsaved changes warning before navigation
+    - Users can navigate away from the editor (back button, dashboard link)
+      and lose all unsaved work without any confirmation prompt
+    - Action: Add beforeunload handler and in-app navigation guards
+
+
+================================================================================
+  HIGH  -  Major quality, performance, and UX issues
+================================================================================
+
+1.  No testing framework or tests
+    - Zero unit tests, integration tests, or e2e tests exist in the project
+    - Action: Set up Vitest + React Testing Library, add tests for critical
+      paths (auth, project CRUD, wall/room logic)
+
+2.  No TypeScript
+    - Large codebase with complex state management (Zustand store, canvas
+      math, room detection) is entirely untyped JavaScript
+    - Action: Migrate incrementally, starting with store.js and utility modules
+
+3.  TwoDEditor.jsx is 773 lines and needs splitting
+    - Single file handles canvas rendering, mouse events, wall drawing,
+      furniture placement, grid, snapping, and more
+    - Action: Extract into focused modules (CanvasRenderer, WallTool,
+      FurnitureTool, GridOverlay, etc.)
+
+4.  Room detection algorithm is O(n^2) and runs on every wall edit
+    - detectRooms() uses nested loops over all walls on every change,
+      causing lag with many walls
+    - Action: Optimize with spatial indexing, or debounce/memoize detection
+
+5.  No toast/notification system for user feedback
+    - Success and error states have no visual feedback mechanism beyond
+      browser alerts
+    - Action: Add a toast/snackbar system (react-hot-toast or similar)
+
+6.  Missing loading states for async operations
+    - Project load, cloud save, cloud delete, and auth operations show no
+      loading indicators
+    - Action: Add skeleton screens, spinners, or progress bars to all
+      async operations
+
+7.  Password validation too weak
+    - Only requires 6 characters with no complexity requirements
+    - Action: Require minimum 8 chars, at least one number and one
+      special character, add strength indicator
+
+8.  Keyboard shortcut conflicts
+    - Multiple shortcut handlers can fire simultaneously when key combos
+      overlap (e.g., Ctrl+Z in editor vs. browser default)
+    - Action: Centralize shortcut management, add proper event handling
+      with stopPropagation where needed
+
+9.  No offline/local-only save support
+    - Projects can only be saved to Firebase cloud; no local save option
+    - Action: Add localStorage or IndexedDB save option for offline use
+
+10. Confirmation dialogs use browser confirm()
+    - Delete project, discard changes, etc. use native browser confirm()
+      which is ugly, not customizable, and blocks the thread
+    - Action: Replace with custom modal dialog components
+
+11. Furniture size definitions duplicated in store.js
+    - Furniture dimensions are defined as magic numbers in multiple places
+      in the store rather than a single source of truth
+    - Action: Extract to a centralized FURNITURE_CATALOG config object
+
+12. No code splitting or lazy loading
+    - All components load upfront including heavy editor components,
+      Three.js for 3D view, etc.
+    - Action: Add React.lazy() + Suspense for route-level splitting,
+      lazy load Three.js and 3D components
+
+13. WCAG color contrast failures across the UI
+    - Multiple text/background color combinations fail WCAG AA contrast
+      ratio requirements
+    - Action: Audit with axe-core, update color palette to meet AA minimum
+
+14. Missing ARIA labels on interactive elements
+    - Toolbar buttons, canvas controls, and form elements lack proper
+      ARIA attributes for screen readers
+    - Action: Add aria-label, role, and other ARIA attributes to all
+      interactive elements
+
+15. Canvas is not keyboard-accessible
+    - The 2D/3D canvas areas cannot be navigated or operated via keyboard
+    - Action: Add keyboard handlers for tool selection, object movement,
+      and canvas navigation
+
+
+================================================================================
+  MEDIUM  -  Feature gaps, code quality, and polish
+================================================================================
+
+1.  No settings/preferences page
+    - Users cannot customize grid size, snap distance, default units,
+      theme, or other preferences
+    - Action: Create SettingsPage with user preference persistence
+
+2.  No project duplication from dashboard
+    - Users cannot clone/duplicate an existing project as a starting point
+    - Action: Add "Duplicate" button to project cards on the dashboard
+
+3.  No project sorting, filtering, or search
+    - Dashboard shows all projects in a flat list with no organization
+    - Action: Add sort (date, name), filter (recent, archived), and search
+
+4.  No custom furniture/asset import
+    - Users are limited to the built-in furniture catalog
+    - Action: Allow uploading custom SVG/PNG assets as furniture items
+
+5.  No curved wall or arc drawing tool
+    - Only straight walls can be drawn
+    - Action: Add arc/curve wall tool with control points
+
+6.  No rectangle quick-draw tool
+    - Drawing a room requires placing 4+ individual walls
+    - Action: Add click-drag rectangle tool that creates 4 walls at once
+
+7.  No layer visibility system
+    - Cannot hide/show walls, furniture, rooms, grid independently
+    - Action: Add layer panel with visibility toggles per element type
+
+8.  No save-as-template feature
+    - Users cannot save a project layout as a reusable template
+    - Action: Add template save/load with a template gallery
+
+9.  No SVG/DWG/CAD export formats
+    - Only PNG/PDF export exists (if any)
+    - Action: Add SVG export minimum, consider DXF for CAD compatibility
+
+10. No room type presets
+    - No way to quickly create standard rooms (bedroom, kitchen, bathroom)
+      with typical dimensions
+    - Action: Add room preset library with standard dimensions
+
+11. No wall opening editor
+    - Cannot resize or reposition doors/windows after placement
+    - Action: Add drag handles to resize openings on walls
+
+12. No multi-floor alignment view
+    - Multi-floor projects have no way to see floor alignment or overlay
+    - Action: Add ghost/overlay of adjacent floors for alignment
+
+13. README is generic Vite template
+    - README.md still contains the default Vite project boilerplate
+    - Action: Write project-specific README with setup, architecture,
+      and contribution guidelines
+
+14. No CI/CD pipeline
+    - No automated build, test, lint, or deploy pipeline exists
+    - Action: Set up GitHub Actions with lint, test, build, and deploy jobs
+
+15. No pre-commit hooks
+    - No automated linting or formatting on commit
+    - Action: Add Husky + lint-staged for pre-commit checks
+
+16. No Prettier for code formatting
+    - No consistent code formatting tool configured
+    - Action: Add Prettier config, format entire codebase, add to pre-commit
+
+17. Tailwind config has no custom theme
+    - Using default Tailwind theme with no project-specific design tokens
+    - Action: Define custom colors, spacing, and typography in tailwind.config
+
+18. Vite config has no build optimizations
+    - Default Vite config with no chunk splitting, compression, or
+      production optimizations
+    - Action: Add manual chunk splitting, gzip/brotli compression plugin,
+      and source map configuration
+
+19. No .env.example file
+    - New developers have no reference for required environment variables
+    - Action: Create .env.example with all required keys and descriptions
+
+20. Mobile/tablet responsiveness incomplete
+    - Editor layout breaks on smaller screens, panels overlap
+    - Action: Add responsive breakpoints, collapsible panels, mobile layout
+
+21. Touch targets too small for mobile
+    - Toolbar buttons and canvas controls are too small for touch input
+    - Action: Increase touch target sizes to minimum 44x44px per WCAG
+
+
+================================================================================
+  LOW  -  Nice-to-haves, future enhancements, and long-term investments
+================================================================================
+
+1.  No collaboration/multi-user editing
+    - Only single-user editing is supported
+    - Action: Add real-time collaboration via Firebase Realtime DB or
+      WebSocket with conflict resolution (CRDT or OT)
+
+2.  No comment/annotation system
+    - Users cannot leave notes or comments on the floor plan
+    - Action: Add text annotation tool with pin-drop comments
+
+3.  No energy/daylight analysis
+    - No simulation of natural light, energy efficiency, or sun position
+    - Action: Integrate sun path analysis and basic energy modeling
+
+4.  No HVAC/utilities routing tools
+    - No support for drawing plumbing, electrical, or HVAC systems
+    - Action: Add utility layer types with routing tools
+
+5.  No kitchen/bathroom design wizard
+    - No guided workflow for designing specific room types
+    - Action: Add step-by-step wizards for kitchen and bathroom layouts
+
+6.  No Google Maps integration for site context
+    - Cannot import real-world site boundaries or terrain
+    - Action: Add Google Maps embed for site location and orientation
+
+7.  No Storybook for component development
+    - No isolated component development and documentation environment
+    - Action: Set up Storybook with stories for all UI components
+
+8.  No architecture documentation (ADR)
+    - No formal record of architectural decisions
+    - Action: Create docs/adr/ directory with decision records
+
+9.  No Docker/containerization
+    - No containerized development or deployment setup
+    - Action: Add Dockerfile and docker-compose.yml for dev environment
+
+10. No bundle size analysis tooling
+    - No visibility into bundle size or dependency weight
+    - Action: Add rollup-plugin-visualizer or webpack-bundle-analyzer
+
+11. Magic numbers scattered throughout codebase
+    - Hard-coded values for grid size, snap distance, zoom levels, etc.
+      appear as raw numbers in multiple files
+    - Action: Centralize in a CONFIG or CONSTANTS module
+
+12. localStorage not cleared on logout
+    - Tour completion flag and other localStorage data persists after
+      logout, leaking state between users on shared devices
+    - Action: Clear relevant localStorage keys on logout
+
+13. OnboardingTour modal too wide for phones
+    - Tour modal uses fixed w-96 (384px) which overflows on small screens
+    - Action: Use max-w-sm or responsive width classes
+
+14. No profile/account management page
+    - Users cannot change email, password, or manage their account
+    - Action: Create ProfilePage with account management features
+
+15. Package version still "0.0.0"
+    - package.json version has never been updated from the default
+    - Action: Set meaningful version (e.g., 0.1.0), consider semantic
+      versioning going forward
+
+
+================================================================================
+  END OF UPGRADE LIST
+================================================================================
