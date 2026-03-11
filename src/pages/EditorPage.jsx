@@ -11,12 +11,13 @@ const ThreeDViewer = lazy(() => import('../components/ThreeDViewer'));
 import useStore from '../store';
 import { getUser, signOut, loadProject as loadCloudProject, saveProject as saveCloudProject } from '../firebase';
 import { toast } from '../components/Toast';
+import { TEMPLATES } from '../data/templates';
 
 const EditorPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const projectId = searchParams.get('project');
-    const { loadProject, getExportData, siteWidth } = useStore();
+    const { loadProject, getExportData, siteWidth, loadTemplate } = useStore();
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [viewMode, setViewMode] = useState('split');
@@ -53,12 +54,19 @@ const EditorPage = () => {
                     setLoadError('Failed to load project');
                     toast.error('Failed to load project from cloud');
                 }
+            } else {
+                // Load template if template key in URL
+                const templateKey = searchParams.get('template');
+                if (templateKey && TEMPLATES[templateKey]) {
+                    loadTemplate(TEMPLATES[templateKey]);
+                    setProjectName(TEMPLATES[templateKey].name);
+                }
             }
         };
         init();
         const toured = localStorage.getItem('house-planner-toured');
         if (!toured) setShowTour(true);
-    }, [projectId, navigate, loadProject]);
+    }, [projectId, navigate, loadProject, loadTemplate, searchParams]);
 
     // Track unsaved changes
     useEffect(() => {
@@ -143,26 +151,30 @@ const EditorPage = () => {
             )}
             {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
 
-            {/* LEFT SIDEBAR */}
-            <div className={`${sidebarOpen ? 'w-44' : 'w-14'} h-full bg-[#1e293b] border-r border-[#334155] z-30 transition-all duration-300 relative flex flex-col`}>
-                <button onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="absolute -right-3 top-10 bg-[#1e293b] border border-[#334155] rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-40 hover:bg-[#334155] text-xs text-slate-400 hover:text-white transition-colors">
-                    {sidebarOpen ? '◁' : '▷'}
-                </button>
-                <AssetLibrary isOpen={sidebarOpen} />
-                <div className={`border-t border-[#334155] p-2 space-y-1 ${!sidebarOpen ? 'px-1' : ''}`}>
-                    <button onClick={() => setShowCost(!showCost)} title="Cost Estimator"
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold transition-colors ${showCost ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-[#334155]'}`}>
-                        <span>💰</span>{sidebarOpen && <span className="uppercase tracking-wider">Cost</span>}
+            {/* LEFT SIDEBAR — always 56px in flow; expands as overlay */}
+            <div className="w-14 h-full flex-shrink-0 relative z-30">
+                <div
+                    className={`${sidebarOpen ? 'w-44' : 'w-14'} h-full bg-[#1e293b] border-r border-[#334155] transition-all duration-300 absolute inset-y-0 left-0 flex flex-col`}
+                >
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="absolute -right-3 top-10 bg-[#1e293b] border border-[#334155] rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-40 hover:bg-[#334155] text-xs text-slate-400 hover:text-white transition-colors">
+                        {sidebarOpen ? '◁' : '▷'}
                     </button>
-                    <button onClick={() => setShowCloud(!showCloud)} title="Cloud Save"
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold transition-colors ${showCloud ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-[#334155]'}`}>
-                        <span>☁️</span>{sidebarOpen && <span className="uppercase tracking-wider">Cloud</span>}
-                    </button>
-                    <button onClick={() => setShowTour(true)} title="Help"
-                        className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold text-slate-400 hover:text-white hover:bg-[#334155] transition-colors">
-                        <span>❓</span>{sidebarOpen && <span className="uppercase tracking-wider">Help</span>}
-                    </button>
+                    <AssetLibrary isOpen={sidebarOpen} />
+                    <div className={`border-t border-[#334155] p-2 space-y-1 ${!sidebarOpen ? 'px-1' : ''}`}>
+                        <button onClick={() => setShowCost(!showCost)} title="Cost Estimator"
+                            className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold transition-colors ${showCost ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-[#334155]'}`}>
+                            <span>💰</span>{sidebarOpen && <span className="uppercase tracking-wider">Cost</span>}
+                        </button>
+                        <button onClick={() => setShowCloud(!showCloud)} title="Cloud Save"
+                            className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold transition-colors ${showCloud ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-[#334155]'}`}>
+                            <span>☁️</span>{sidebarOpen && <span className="uppercase tracking-wider">Cloud</span>}
+                        </button>
+                        <button onClick={() => setShowTour(true)} title="Help"
+                            className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[10px] font-bold text-slate-400 hover:text-white hover:bg-[#334155] transition-colors">
+                            <span>❓</span>{sidebarOpen && <span className="uppercase tracking-wider">Help</span>}
+                        </button>
+                    </div>
                 </div>
             </div>
 
