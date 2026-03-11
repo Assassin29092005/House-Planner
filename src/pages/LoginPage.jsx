@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signIn } from '../firebase';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -17,79 +18,68 @@ const LoginPage = () => {
             const { error: err } = await signIn(email, password);
             setLoading(false);
             if (err) { setError(err.message); return; }
-            navigate('/dashboard');
+            const redirect = searchParams.get('redirect') || '/dashboard';
+            navigate(redirect);
         } catch (networkErr) {
             setLoading(false);
             if (networkErr.message?.includes('fetch') || networkErr.message?.includes('network')) {
-                setError('Cannot reach the server. Please check your internet connection and try again.');
+                setError('Cannot reach the server. Check your connection and try again.');
             } else {
-                setError('An unexpected error occurred. Please try again later.');
+                setError('An unexpected error occurred. Please try again.');
             }
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-indigo-600/10 blur-3xl" />
-                <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-violet-600/5 blur-2xl" />
-            </div>
-
-            <div className="relative z-10 w-full max-w-md mx-4">
+        <div className="min-h-screen hp-page hp-grain flex items-center justify-center px-4">
+            <div className="w-full max-w-[400px]">
                 {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-3">🏗️</div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">House Planner</h1>
-                    <p className="text-slate-400 text-sm mt-1">Design • Visualize • Build</p>
-                </div>
+                <Link to="/" className="flex flex-col items-center gap-3 mb-10 group" style={{ color: 'var(--hp-text)' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="transition-transform duration-300 group-hover:rotate-6">
+                        <path d="M4 10L12 4L20 10" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                        <rect x="4" y="10" width="16" height="11" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+                        <rect x="9.5" y="15" width="5" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+                    </svg>
+                    <span className="hp-serif text-[22px]">House Planner</span>
+                </Link>
 
                 {/* Card */}
-                <div className="bg-[#1e293b] border border-[#334155] rounded-2xl shadow-2xl overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
-                        <h2 className="text-xl font-black text-white">Welcome Back</h2>
-                        <p className="text-blue-200 text-sm mt-0.5">Sign in to your account</p>
-                    </div>
+                <div className="rounded-xl p-8" style={{ background: 'var(--hp-card)', border: '1px solid var(--hp-border)' }}>
+                    <h2 className="text-[18px] font-semibold mb-1" style={{ color: 'var(--hp-text)' }}>Welcome back</h2>
+                    <p className="text-[13px] mb-7" style={{ color: 'var(--hp-muted)' }}>Sign in to continue to your projects</p>
 
-                    <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {error && (
-                            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2.5 rounded-xl text-sm font-medium">
+                            <div className="text-[13px] px-4 py-2.5 rounded-lg"
+                                style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', color: 'var(--hp-red)' }}>
                                 {error}
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Email</label>
                             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                                placeholder="you@example.com"
-                                className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600" />
+                                placeholder="you@example.com" className="hp-input" />
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Password</label>
                             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-                                placeholder="••••••••"
-                                className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600" />
+                                placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" className="hp-input" />
                         </div>
 
-                        <button type="submit" disabled={loading}
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm uppercase tracking-widest shadow-lg shadow-blue-500/25 transition-all">
-                            {loading ? '⏳ Signing in...' : 'Sign In →'}
+                        <button type="submit" disabled={loading} className="hp-btn hp-btn-accent w-full h-11 text-[13px] mt-2">
+                            {loading ? 'Signing in\u2026' : 'Sign in'}
                         </button>
                     </form>
-
-                    <div className="px-6 pb-6">
-                        <div className="text-center text-sm text-slate-500">
-                            Don't have an account?{' '}
-                            <Link to="/signup" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
-                                Create one
-                            </Link>
-                        </div>
-                    </div>
                 </div>
 
-                <p className="text-center text-[10px] text-slate-600 mt-6">By signing in you agree to our terms of service</p>
+                <p className="text-center text-[13px] mt-7" style={{ color: 'var(--hp-muted)' }}>
+                    Don&apos;t have an account?{' '}
+                    <Link to="/signup" className="font-medium transition-colors duration-300" style={{ color: 'var(--hp-accent)' }}>
+                        Create one
+                    </Link>
+                </p>
             </div>
         </div>
     );

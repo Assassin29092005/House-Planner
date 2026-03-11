@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signUp } from '../firebase';
 
 const SignupPage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -22,90 +23,89 @@ const SignupPage = () => {
         try {
             const { error: err } = await signUp(email, password, fullName);
             setLoading(false);
-
             if (err) { setError(err.message); return; }
-            setSuccess('Account created successfully! Redirecting...');
-            setTimeout(() => navigate('/dashboard'), 1500);
+            setSuccess('Account created! Redirecting\u2026');
+            const redirect = searchParams.get('redirect') || '/dashboard';
+            setTimeout(() => navigate(redirect), 1500);
         } catch (networkErr) {
             setLoading(false);
             if (networkErr.message?.includes('fetch') || networkErr.message?.includes('network')) {
-                setError('Cannot reach the server. Please check your internet connection and try again.');
+                setError('Cannot reach the server. Check your connection and try again.');
             } else {
-                setError('An unexpected error occurred. Please try again later.');
+                setError('An unexpected error occurred. Please try again.');
             }
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-emerald-600/10 blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" />
-            </div>
+        <div className="min-h-screen hp-page hp-grain flex items-center justify-center px-4 py-12">
+            <div className="w-full max-w-[420px]">
+                {/* Logo */}
+                <Link to="/" className="flex flex-col items-center gap-3 mb-10 group" style={{ color: 'var(--hp-text)' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="transition-transform duration-300 group-hover:rotate-6">
+                        <path d="M4 10L12 4L20 10" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                        <rect x="4" y="10" width="16" height="11" rx="0.8" stroke="currentColor" strokeWidth="1.4" />
+                        <rect x="9.5" y="15" width="5" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+                    </svg>
+                    <span className="hp-serif text-[22px]">House Planner</span>
+                </Link>
 
-            <div className="relative z-10 w-full max-w-md mx-4">
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-3">🏗️</div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">House Planner</h1>
-                    <p className="text-slate-400 text-sm mt-1">Create your free account</p>
-                </div>
+                {/* Card */}
+                <div className="rounded-xl p-8" style={{ background: 'var(--hp-card)', border: '1px solid var(--hp-border)' }}>
+                    <h2 className="text-[18px] font-semibold mb-1" style={{ color: 'var(--hp-text)' }}>Create your account</h2>
+                    <p className="text-[13px] mb-7" style={{ color: 'var(--hp-muted)' }}>Start designing floor plans in minutes</p>
 
-                <div className="bg-[#1e293b] border border-[#334155] rounded-2xl shadow-2xl overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5">
-                        <h2 className="text-xl font-black text-white">Get Started</h2>
-                        <p className="text-emerald-200 text-sm mt-0.5">Join thousands of architects & builders</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {error && (
-                            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2.5 rounded-xl text-sm font-medium">{error}</div>
+                            <div className="text-[13px] px-4 py-2.5 rounded-lg"
+                                style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)', color: 'var(--hp-red)' }}>
+                                {error}
+                            </div>
                         )}
                         {success && (
-                            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-2.5 rounded-xl text-sm font-medium">{success}</div>
+                            <div className="text-[13px] px-4 py-2.5 rounded-lg"
+                                style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)', color: 'var(--hp-green)' }}>
+                                {success}
+                            </div>
                         )}
 
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+                            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Full Name</label>
                             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required
-                                placeholder="John Doe"
-                                className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600" />
+                                placeholder="Jane Doe" className="hp-input" />
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
+                            <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Email</label>
                             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                                placeholder="you@example.com"
-                                className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600" />
+                                placeholder="you@example.com" className="hp-input" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Password</label>
                                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-                                    placeholder="••••••"
-                                    className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600" />
+                                    placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" className="hp-input" />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Confirm</label>
+                                <label className="block text-[11px] font-semibold uppercase tracking-[0.1em] mb-2" style={{ color: 'var(--hp-muted)' }}>Confirm</label>
                                 <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
-                                    placeholder="••••••"
-                                    className="w-full bg-[#0f172a] border border-[#334155] text-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600" />
+                                    placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" className="hp-input" />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={loading}
-                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 text-white font-black py-3.5 rounded-xl text-sm uppercase tracking-widest shadow-lg shadow-emerald-500/25 transition-all">
-                            {loading ? '⏳ Creating...' : 'Create Account →'}
+                        <button type="submit" disabled={loading} className="hp-btn hp-btn-accent w-full h-11 text-[13px] mt-2">
+                            {loading ? 'Creating account\u2026' : 'Create account'}
                         </button>
                     </form>
-
-                    <div className="px-6 pb-6">
-                        <div className="text-center text-sm text-slate-500">
-                            Already have an account?{' '}
-                            <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">Sign in</Link>
-                        </div>
-                    </div>
                 </div>
+
+                <p className="text-center text-[13px] mt-7" style={{ color: 'var(--hp-muted)' }}>
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-medium transition-colors duration-300" style={{ color: 'var(--hp-accent)' }}>
+                        Sign in
+                    </Link>
+                </p>
             </div>
         </div>
     );
